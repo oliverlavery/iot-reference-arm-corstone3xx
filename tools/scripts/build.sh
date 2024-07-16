@@ -178,6 +178,10 @@ case "$1" in
         EXAMPLE="$1"
         PATH_TO_SOURCE="$ROOT/applications/blinky"
         ;;
+    memsafe)
+        EXAMPLE="$1"
+        PATH_TO_SOURCE="$ROOT/applications/memsafe"
+        ;;
     freertos-iot-libraries-tests)
         EXAMPLE="$1"
         PATH_TO_SOURCE="$ROOT/applications/freertos_iot_libraries_tests"
@@ -195,7 +199,7 @@ case "$1" in
         PATH_TO_SOURCE="$ROOT/applications/object_detection"
         ;;
     *)
-        echo "Missing example <blinky,freertos-iot-libraries-tests,keyword-detection,object-detection,speech-recognition>"
+        echo "Missing example <blinky,memsafe,freertos-iot-libraries-tests,keyword-detection,object-detection,speech-recognition>"
         show_usage
         exit 2
         ;;
@@ -283,13 +287,13 @@ case "$CONNECTIVITY_STACK" in
         ;;
 esac
 
-if [ "$EXAMPLE" != "blinky" ] && [ ! -f "$CERTIFICATE_PATH" ]; then
+if [ "$EXAMPLE" != "blinky" ] && [ "$EXAMPLE" != "memsafe" ] && [ ! -f "$CERTIFICATE_PATH" ]; then
     echo "The --certificate_path must be set to an existing file."
     show_usage
     exit 2
 fi
 
-if [ "$EXAMPLE" != "blinky" ] && [ ! -f "$PRIVATE_KEY_PATH" ]; then
+if [ "$EXAMPLE" != "blinky" ] && [ "$EXAMPLE" != "memsafe" ] && [ ! -f "$PRIVATE_KEY_PATH" ]; then
     echo "The --private_key_path must be set to an existing file."
     show_usage
     exit 2

@@ -36,7 +36,7 @@ Options:
     -D,--display    Is display (GUI) available
 
 Examples:
-    blinky, keyword-detection, speech-recognition, object-detection
+    blinky, memsafe, keyword-detection, speech-recognition, object-detection
 EOF
 }
 
@@ -134,6 +134,10 @@ case "$1" in
     blinky)
         EXAMPLE="$1"
         MERGED_IMAGE_PATH="$BUILD_PATH/blinky_merged.elf"
+        ;;
+    memsafe)
+        EXAMPLE="$1"
+        MERGED_IMAGE_PATH="$BUILD_PATH/memsafe_merged.elf"
         ;;
     keyword-detection)
         EXAMPLE="$1"
