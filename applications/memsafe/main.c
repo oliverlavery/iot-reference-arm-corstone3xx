@@ -5,6 +5,8 @@
 
 #include "bsp_serial.h"
 #include "tfm_ns_interface.h"
+#include "aws_mbedtls_config.h"
+#include "psa/crypto.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -32,6 +34,14 @@ void vAssertCalled( const char * pcFile,
         }
     }
     taskEXIT_CRITICAL();
+}
+
+/* Initialize heap canary */
+void vApplicationGetRandomHeapCanary( portPOINTER_SIZE_TYPE * pxHeapCanary )
+{
+    psa_status_t xPsaStatus = PSA_ERROR_PROGRAMMER_ERROR;
+    xPsaStatus = psa_generate_random( ( uint8_t * ) ( pxHeapCanary ), sizeof( portPOINTER_SIZE_TYPE ) );
+    configASSERT(PSA_SUCCESS == xPsaStatus);
 }
 
 static void app_task( void * arg )
@@ -69,17 +79,48 @@ static void app_task( void * arg )
     }
 }
 
+
+uintptr_t __stack_chk_guard = 0;
+
+void
+__attribute__ ((no_stack_protector))
+__stack_chk_init (void)
+{
+    uintptr_t tmp;
+    if (__stack_chk_guard != 0)
+        return;
+    //__stack_chk_guard = 0xF00;
+    if (PSA_SUCCESS == psa_generate_random( ( uint8_t * ) ( &tmp ), sizeof( tmp ) ) ) {
+        __stack_chk_guard = tmp;
+    } else {
+        printf("Unable to initialize stack protection.\n");
+        for (;;);
+    }
+}
+
+void
+__attribute__((__noreturn__))
+__stack_chk_fail (void)
+{
+    printf("*** stack smashing detected ***: terminated\n");
+    for (;;);
+}
+
 int main()
 {
     bsp_serial_init();
 
     uint32_t ret = tfm_ns_interface_init();
+    __stack_chk_init();
+
 
     if( ret != 0 )
     {
         printf( "tfm_ns_interface_init() failed: %u\r\n", ret );
         return EXIT_FAILURE;
     }
+
+    printf( "__stack_chk_guard == %u\r\n", __stack_chk_guard );
 
     xTaskCreate( app_task,                 /* The function that implements the task. */
                  "App",                    /* The text name assigned to the task - for debug only as it is not used by the kernel. */

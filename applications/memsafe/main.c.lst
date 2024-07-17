@@ -1,0 +1,1009 @@
+   1              		.arch armv8.1-m.main
+   2              		.fpu fpv5-d16
+   3              		.arch_extension dsp
+   4              		.arch_extension fp
+   5              		.arch_extension fp.dp
+   6              		.arch_extension mve
+   7              		.arch_extension mve.fp
+   8              		.eabi_attribute 28, 1
+   9              		.eabi_attribute 20, 1
+  10              		.eabi_attribute 21, 1
+  11              		.eabi_attribute 23, 3
+  12              		.eabi_attribute 24, 1
+  13              		.eabi_attribute 25, 1
+  14              		.eabi_attribute 26, 1
+  15              		.eabi_attribute 30, 1
+  16              		.eabi_attribute 34, 1
+  17              		.eabi_attribute 38, 1
+  18              		.eabi_attribute 18, 4
+  19              		.file	"main.c"
+  20              		.text
+  21              	.Ltext0:
+  22              		.cfi_sections	.debug_frame
+  23              		.file 1 "/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c"
+  24              		.section	.rodata.app_task.str1.4,"aMS",%progbits,1
+  25              		.align	2
+  26              	.LC0:
+  27 0000 7073615F 		.ascii	"psa_framework_version is: %d\012\000"
+  27      6672616D 
+  27      65776F72 
+  27      6B5F7665 
+  27      7273696F 
+  28 001e 0000     		.align	2
+  29              	.LC1:
+  30 0020 4C454420 		.ascii	"LED on\015\000"
+  30      6F6E0D00 
+  31              		.align	2
+  32              	.LC2:
+  33 0028 4C454420 		.ascii	"LED off\015\000"
+  33      6F66660D 
+  33      00
+  34              		.section	.text.app_task,"ax",%progbits
+  35              		.align	1
+  36              		.syntax unified
+  37              		.thumb
+  38              		.thumb_func
+  40              	app_task:
+  41              	.LVL0:
+  42              	.LFB68:
+   1:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c **** /* Copyright 2023 Arm Limited and/or its affiliates
+   2:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****  * <open-source-office@arm.com>
+   3:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****  * SPDX-License-Identifier: MIT
+   4:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****  */
+   5:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c **** 
+   6:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c **** #include "bsp_serial.h"
+   7:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c **** #include "tfm_ns_interface.h"
+   8:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c **** #include "aws_mbedtls_config.h"
+   9:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c **** #include "psa/crypto.h"
+  10:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c **** 
+  11:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c **** #include <stdio.h>
+  12:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c **** #include <stdlib.h>
+  13:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c **** 
+  14:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c **** /* Kernel includes. */
+  15:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c **** #include "FreeRTOS.h"
+  16:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c **** #include "task.h"
+  17:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c **** 
+  18:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c **** extern uint32_t tfm_ns_interface_init( void );
+  19:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c **** 
+  20:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c **** void vAssertCalled( const char * pcFile,
+  21:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****                     unsigned long ulLine )
+  22:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c **** {
+  23:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****     printf( "ASSERT failed! file %s:%lu, \r\n", pcFile, ulLine );
+  24:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c **** 
+  25:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****     taskENTER_CRITICAL();
+  26:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****     {
+  27:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****         volatile unsigned long looping = 0;
+  28:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c **** 
+  29:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****         /* Use the debugger to set ul to a non-zero value in order to step out
+  30:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****          *      of this function to determine why it was called. */
+  31:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****         while( looping == 0LU )
+  32:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****         {
+  33:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****             portNOP();
+  34:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****         }
+  35:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****     }
+  36:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****     taskEXIT_CRITICAL();
+  37:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c **** }
+  38:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c **** 
+  39:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c **** /* Initialize heap canary */
+  40:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c **** void vApplicationGetRandomHeapCanary( portPOINTER_SIZE_TYPE * pxHeapCanary )
+  41:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c **** {
+  42:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****     psa_status_t xPsaStatus = PSA_ERROR_PROGRAMMER_ERROR;
+  43:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****     xPsaStatus = psa_generate_random( ( uint8_t * ) ( pxHeapCanary ), sizeof( portPOINTER_SIZE_TYPE
+  44:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****     configASSERT(PSA_SUCCESS == xPsaStatus);
+  45:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c **** }
+  46:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c **** 
+  47:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c **** static void app_task( void * arg )
+  48:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c **** {
+  43              		.loc 1 48 1 view -0
+  44              		.cfi_startproc
+  45              		@ args = 0, pretend = 0, frame = 8
+  46              		@ frame_needed = 0, uses_anonymous_args = 0
+  47              		.loc 1 48 1 is_stmt 0 view .LVU1
+  48 0000 10B5     		push	{r4, lr}
+  49              		.cfi_def_cfa_offset 8
+  50              		.cfi_offset 4, -8
+  51              		.cfi_offset 14, -4
+  52 0002 82B0     		sub	sp, sp, #8
+  53              		.cfi_def_cfa_offset 16
+  54              		.loc 1 48 1 view .LVU2
+  55 0004 0F4B     		ldr	r3, .L8
+  56 0006 1B68     		ldr	r3, [r3]
+  57 0008 0193     		str	r3, [sp, #4]
+  58 000a 4FF00003 		mov	r3, #0
+  49:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****     TickType_t xNextWakeTime;
+  59              		.loc 1 49 5 is_stmt 1 view .LVU3
+  50:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****     uint32_t led_status = 1;
+  60              		.loc 1 50 5 view .LVU4
+  61              	.LVL1:
+  51:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c **** 
+  52:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****     /* Prevent the compiler warning about the unused parameter. */
+  53:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****     ( void ) arg;
+  62              		.loc 1 53 5 view .LVU5
+  54:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c **** 
+  55:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****     /* Initialise xNextWakeTime - this only needs to be done once. */
+  56:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****     xNextWakeTime = xTaskGetTickCount();
+  63              		.loc 1 56 5 view .LVU6
+  64              		.loc 1 56 21 is_stmt 0 view .LVU7
+  65 000e FFF7FEFF 		bl	xTaskGetTickCount
+  66              	.LVL2:
+  67              		.loc 1 56 19 discriminator 1 view .LVU8
+  68 0012 0090     		str	r0, [sp]
+  57:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c **** 
+  58:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****     printf( "psa_framework_version is: %d\n", psa_framework_version() );
+  69              		.loc 1 58 5 is_stmt 1 view .LVU9
+  70 0014 FFF7FEFF 		bl	psa_framework_version
+  71              	.LVL3:
+  72 0018 0146     		mov	r1, r0
+  73              		.loc 1 58 5 is_stmt 0 discriminator 1 view .LVU10
+  74 001a 0B48     		ldr	r0, .L8+4
+  75 001c FFF7FEFF 		bl	printf
+  76              	.LVL4:
+  50:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c **** 
+  77              		.loc 1 50 14 view .LVU11
+  78 0020 0124     		movs	r4, #1
+  79 0022 08E0     		b	.L4
+  80              	.LVL5:
+  81              	.L7:
+  59:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c **** 
+  60:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****     while( 1 )
+  61:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****     {
+  62:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****         if( led_status )
+  63:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****         {
+  64:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****             printf( "LED on\r\n" );
+  82              		.loc 1 64 13 is_stmt 1 view .LVU12
+  83 0024 0948     		ldr	r0, .L8+8
+  84 0026 FFF7FEFF 		bl	puts
+  85              	.LVL6:
+  65:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****             led_status = 0;
+  86              		.loc 1 65 13 view .LVU13
+  87              		.loc 1 65 24 is_stmt 0 view .LVU14
+  88 002a 0024     		movs	r4, #0
+  89              	.LVL7:
+  90              	.L3:
+  66:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****         }
+  67:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****         else
+  68:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****         {
+  69:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****             printf( "LED off\r\n" );
+  70:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****             led_status = 1;
+  71:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****         }
+  72:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c **** 
+  73:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****         /* Place this task in the blocked state until it is time to run again.
+  74:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****          *  The block time is specified in ticks, pdMS_TO_TICKS() was used to
+  75:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****          *  convert a time specified in milliseconds into a time specified in ticks.
+  76:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****          *  While in the Blocked state this task will not consume any CPU time.
+  77:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****          */
+  78:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****         vTaskDelayUntil( &xNextWakeTime, pdMS_TO_TICKS( 1000UL ) );
+  91              		.loc 1 78 9 is_stmt 1 view .LVU15
+  92              		.loc 1 78 9 view .LVU16
+  93 002c 4FF47A71 		mov	r1, #1000
+  94 0030 6846     		mov	r0, sp
+  95 0032 FFF7FEFF 		bl	xTaskDelayUntil
+  96              	.LVL8:
+  97              		.loc 1 78 9 discriminator 1 view .LVU17
+  60:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****     {
+  98              		.loc 1 60 10 view .LVU18
+  99              	.L4:
+  60:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****     {
+ 100              		.loc 1 60 5 view .LVU19
+  62:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****         {
+ 101              		.loc 1 62 9 view .LVU20
+  62:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****         {
+ 102              		.loc 1 62 11 is_stmt 0 view .LVU21
+ 103 0036 002C     		cmp	r4, #0
+ 104 0038 F4D1     		bne	.L7
+  69:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****             led_status = 1;
+ 105              		.loc 1 69 13 is_stmt 1 view .LVU22
+ 106 003a 0548     		ldr	r0, .L8+12
+ 107 003c FFF7FEFF 		bl	puts
+ 108              	.LVL9:
+  70:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****         }
+ 109              		.loc 1 70 13 view .LVU23
+  70:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****         }
+ 110              		.loc 1 70 24 is_stmt 0 view .LVU24
+ 111 0040 0124     		movs	r4, #1
+ 112 0042 F3E7     		b	.L3
+ 113              	.L9:
+ 114              		.align	2
+ 115              	.L8:
+ 116 0044 00000000 		.word	__stack_chk_guard
+ 117 0048 00000000 		.word	.LC0
+ 118 004c 20000000 		.word	.LC1
+ 119 0050 28000000 		.word	.LC2
+ 120              		.cfi_endproc
+ 121              	.LFE68:
+ 123              		.section	.rodata.vAssertCalled.str1.4,"aMS",%progbits,1
+ 124              		.align	2
+ 125              	.LC4:
+ 126 0000 41535345 		.ascii	"ASSERT failed! file %s:%lu, \015\012\000"
+ 126      52542066 
+ 126      61696C65 
+ 126      64212066 
+ 126      696C6520 
+ 127              		.section	.text.vAssertCalled,"ax",%progbits
+ 128              		.align	1
+ 129              		.global	vAssertCalled
+ 130              		.syntax unified
+ 131              		.thumb
+ 132              		.thumb_func
+ 134              	vAssertCalled:
+ 135              	.LVL10:
+ 136              	.LFB66:
+  22:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****     printf( "ASSERT failed! file %s:%lu, \r\n", pcFile, ulLine );
+ 137              		.loc 1 22 1 is_stmt 1 view -0
+ 138              		.cfi_startproc
+ 139              		@ args = 0, pretend = 0, frame = 8
+ 140              		@ frame_needed = 0, uses_anonymous_args = 0
+  22:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****     printf( "ASSERT failed! file %s:%lu, \r\n", pcFile, ulLine );
+ 141              		.loc 1 22 1 is_stmt 0 view .LVU26
+ 142 0000 00B5     		push	{lr}
+ 143              		.cfi_def_cfa_offset 4
+ 144              		.cfi_offset 14, -4
+ 145 0002 83B0     		sub	sp, sp, #12
+ 146              		.cfi_def_cfa_offset 16
+ 147 0004 0A46     		mov	r2, r1
+  22:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****     printf( "ASSERT failed! file %s:%lu, \r\n", pcFile, ulLine );
+ 148              		.loc 1 22 1 view .LVU27
+ 149 0006 0F4B     		ldr	r3, .L15
+ 150 0008 1B68     		ldr	r3, [r3]
+ 151 000a 0193     		str	r3, [sp, #4]
+ 152 000c 4FF00003 		mov	r3, #0
+  23:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c **** 
+ 153              		.loc 1 23 5 is_stmt 1 view .LVU28
+ 154 0010 0146     		mov	r1, r0
+ 155              	.LVL11:
+  23:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c **** 
+ 156              		.loc 1 23 5 is_stmt 0 view .LVU29
+ 157 0012 0D48     		ldr	r0, .L15+4
+ 158              	.LVL12:
+  23:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c **** 
+ 159              		.loc 1 23 5 view .LVU30
+ 160 0014 FFF7FEFF 		bl	printf
+ 161              	.LVL13:
+  25:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****     {
+ 162              		.loc 1 25 5 is_stmt 1 view .LVU31
+ 163 0018 FFF7FEFF 		bl	vPortEnterCritical
+ 164              	.LVL14:
+ 165              	.LBB2:
+  27:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c **** 
+ 166              		.loc 1 27 9 view .LVU32
+  27:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c **** 
+ 167              		.loc 1 27 32 is_stmt 0 view .LVU33
+ 168 001c 0023     		movs	r3, #0
+ 169 001e 0093     		str	r3, [sp]
+  31:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****         {
+ 170              		.loc 1 31 9 is_stmt 1 view .LVU34
+ 171              	.L11:
+  33:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****         }
+ 172              		.loc 1 33 22 view .LVU35
+  31:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****         {
+ 173              		.loc 1 31 24 discriminator 1 view .LVU36
+ 174 0020 009B     		ldr	r3, [sp]
+ 175 0022 002B     		cmp	r3, #0
+ 176 0024 FCD0     		beq	.L11
+ 177              	.LBE2:
+  36:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c **** }
+ 178              		.loc 1 36 5 view .LVU37
+ 179 0026 FFF7FEFF 		bl	vPortExitCritical
+ 180              	.LVL15:
+  37:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c **** 
+ 181              		.loc 1 37 1 is_stmt 0 view .LVU38
+ 182 002a 064B     		ldr	r3, .L15
+ 183 002c 1A68     		ldr	r2, [r3]
+ 184 002e 019B     		ldr	r3, [sp, #4]
+ 185 0030 5A40     		eors	r2, r3, r2
+ 186 0032 4FF00003 		mov	r3, #0
+ 187 0036 02D1     		bne	.L14
+ 188 0038 03B0     		add	sp, sp, #12
+ 189              		.cfi_remember_state
+ 190              		.cfi_def_cfa_offset 4
+ 191              		@ sp needed
+ 192 003a 5DF804FB 		ldr	pc, [sp], #4
+ 193              	.L14:
+ 194              		.cfi_restore_state
+ 195 003e FFF7FEFF 		bl	__stack_chk_fail
+ 196              	.LVL16:
+ 197              	.L16:
+ 198 0042 00BF     		.align	2
+ 199              	.L15:
+ 200 0044 00000000 		.word	__stack_chk_guard
+ 201 0048 00000000 		.word	.LC4
+ 202              		.cfi_endproc
+ 203              	.LFE66:
+ 205              		.section	.rodata.vApplicationGetRandomHeapCanary.str1.4,"aMS",%progbits,1
+ 206              		.align	2
+ 207              	.LC6:
+ 208 0000 2F686F6D 		.ascii	"/home/oliver/code/iot-reference-arm-corstone3xx/app"
+ 208      652F6F6C 
+ 208      69766572 
+ 208      2F636F64 
+ 208      652F696F 
+ 209 0033 6C696361 		.ascii	"lications/memsafe/main.c\000"
+ 209      74696F6E 
+ 209      732F6D65 
+ 209      6D736166 
+ 209      652F6D61 
+ 210              		.section	.text.vApplicationGetRandomHeapCanary,"ax",%progbits
+ 211              		.align	1
+ 212              		.global	vApplicationGetRandomHeapCanary
+ 213              		.syntax unified
+ 214              		.thumb
+ 215              		.thumb_func
+ 217              	vApplicationGetRandomHeapCanary:
+ 218              	.LVL17:
+ 219              	.LFB67:
+  41:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****     psa_status_t xPsaStatus = PSA_ERROR_PROGRAMMER_ERROR;
+ 220              		.loc 1 41 1 is_stmt 1 view -0
+ 221              		.cfi_startproc
+ 222              		@ args = 0, pretend = 0, frame = 8
+ 223              		@ frame_needed = 0, uses_anonymous_args = 0
+  41:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****     psa_status_t xPsaStatus = PSA_ERROR_PROGRAMMER_ERROR;
+ 224              		.loc 1 41 1 is_stmt 0 view .LVU40
+ 225 0000 00B5     		push	{lr}
+ 226              		.cfi_def_cfa_offset 4
+ 227              		.cfi_offset 14, -4
+ 228 0002 83B0     		sub	sp, sp, #12
+ 229              		.cfi_def_cfa_offset 16
+  41:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****     psa_status_t xPsaStatus = PSA_ERROR_PROGRAMMER_ERROR;
+ 230              		.loc 1 41 1 view .LVU41
+ 231 0004 0C4B     		ldr	r3, .L23
+ 232 0006 1B68     		ldr	r3, [r3]
+ 233 0008 0193     		str	r3, [sp, #4]
+ 234 000a 4FF00003 		mov	r3, #0
+  42:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****     xPsaStatus = psa_generate_random( ( uint8_t * ) ( pxHeapCanary ), sizeof( portPOINTER_SIZE_TYPE
+ 235              		.loc 1 42 5 is_stmt 1 view .LVU42
+ 236              	.LVL18:
+  43:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****     configASSERT(PSA_SUCCESS == xPsaStatus);
+ 237              		.loc 1 43 5 view .LVU43
+  43:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****     configASSERT(PSA_SUCCESS == xPsaStatus);
+ 238              		.loc 1 43 18 is_stmt 0 view .LVU44
+ 239 000e 0421     		movs	r1, #4
+ 240 0010 FFF7FEFF 		bl	psa_generate_random
+ 241              	.LVL19:
+  44:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c **** }
+ 242              		.loc 1 44 5 is_stmt 1 view .LVU45
+ 243 0014 48B9     		cbnz	r0, .L21
+ 244              	.LVL20:
+ 245              	.L17:
+  45:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c **** 
+ 246              		.loc 1 45 1 is_stmt 0 view .LVU46
+ 247 0016 084B     		ldr	r3, .L23
+ 248 0018 1A68     		ldr	r2, [r3]
+ 249 001a 019B     		ldr	r3, [sp, #4]
+ 250 001c 5A40     		eors	r2, r3, r2
+ 251 001e 4FF00003 		mov	r3, #0
+ 252 0022 07D1     		bne	.L22
+ 253 0024 03B0     		add	sp, sp, #12
+ 254              		.cfi_remember_state
+ 255              		.cfi_def_cfa_offset 4
+ 256              		@ sp needed
+ 257 0026 5DF804FB 		ldr	pc, [sp], #4
+ 258              	.LVL21:
+ 259              	.L21:
+ 260              		.cfi_restore_state
+  44:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c **** }
+ 261              		.loc 1 44 5 is_stmt 1 discriminator 1 view .LVU47
+ 262 002a 2C21     		movs	r1, #44
+ 263 002c 0348     		ldr	r0, .L23+4
+ 264              	.LVL22:
+  44:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c **** }
+ 265              		.loc 1 44 5 is_stmt 0 discriminator 1 view .LVU48
+ 266 002e FFF7FEFF 		bl	vAssertCalled
+ 267              	.LVL23:
+  44:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c **** }
+ 268              		.loc 1 44 44 is_stmt 1 discriminator 3 view .LVU49
+  45:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c **** 
+ 269              		.loc 1 45 1 is_stmt 0 view .LVU50
+ 270 0032 F0E7     		b	.L17
+ 271              	.L22:
+ 272 0034 FFF7FEFF 		bl	__stack_chk_fail
+ 273              	.LVL24:
+ 274              	.L24:
+ 275              		.align	2
+ 276              	.L23:
+ 277 0038 00000000 		.word	__stack_chk_guard
+ 278 003c 00000000 		.word	.LC6
+ 279              		.cfi_endproc
+ 280              	.LFE67:
+ 282              		.section	.rodata.__stack_chk_init.str1.4,"aMS",%progbits,1
+ 283              		.align	2
+ 284              	.LC8:
+ 285 0000 556E6162 		.ascii	"Unable to initialize stack protection.\000"
+ 285      6C652074 
+ 285      6F20696E 
+ 285      69746961 
+ 285      6C697A65 
+ 286              		.section	.text.__stack_chk_init,"ax",%progbits
+ 287              		.align	1
+ 288              		.global	__stack_chk_init
+ 289              		.syntax unified
+ 290              		.thumb
+ 291              		.thumb_func
+ 293              	__stack_chk_init:
+ 294              	.LFB69:
+  79:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****     }
+  80:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c **** }
+  81:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c **** 
+  82:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c **** 
+  83:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c **** uintptr_t __stack_chk_guard = 0;
+  84:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c **** 
+  85:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c **** void
+  86:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c **** __attribute__ ((no_stack_protector))
+  87:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c **** __stack_chk_init (void)
+  88:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c **** {
+ 295              		.loc 1 88 1 is_stmt 1 view -0
+ 296              		.cfi_startproc
+ 297              		@ args = 0, pretend = 0, frame = 8
+ 298              		@ frame_needed = 0, uses_anonymous_args = 0
+  89:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****     uintptr_t tmp;
+ 299              		.loc 1 89 5 view .LVU52
+  90:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****     if (__stack_chk_guard != 0)
+ 300              		.loc 1 90 5 view .LVU53
+ 301              		.loc 1 90 27 is_stmt 0 view .LVU54
+ 302 0000 0A4B     		ldr	r3, .L35
+ 303 0002 1B68     		ldr	r3, [r3]
+ 304              		.loc 1 90 8 view .LVU55
+ 305 0004 03B1     		cbz	r3, .L34
+ 306 0006 7047     		bx	lr
+ 307              	.L34:
+  88:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****     uintptr_t tmp;
+ 308              		.loc 1 88 1 view .LVU56
+ 309 0008 00B5     		push	{lr}
+ 310              		.cfi_def_cfa_offset 4
+ 311              		.cfi_offset 14, -4
+ 312 000a 83B0     		sub	sp, sp, #12
+ 313              		.cfi_def_cfa_offset 16
+  91:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****         return;
+  92:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****     //__stack_chk_guard = 0xF00;
+  93:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****     if (PSA_SUCCESS == psa_generate_random( ( uint8_t * ) ( &tmp ), sizeof( tmp ) ) ) {
+ 314              		.loc 1 93 5 is_stmt 1 view .LVU57
+ 315              		.loc 1 93 24 is_stmt 0 view .LVU58
+ 316 000c 0421     		movs	r1, #4
+ 317 000e 0DEB0100 		add	r0, sp, r1
+ 318 0012 FFF7FEFF 		bl	psa_generate_random
+ 319              	.LVL25:
+ 320              		.loc 1 93 8 discriminator 1 view .LVU59
+ 321 0016 28B9     		cbnz	r0, .L28
+  94:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****         __stack_chk_guard = tmp;
+ 322              		.loc 1 94 9 is_stmt 1 view .LVU60
+ 323              		.loc 1 94 27 is_stmt 0 view .LVU61
+ 324 0018 044B     		ldr	r3, .L35
+ 325 001a 019A     		ldr	r2, [sp, #4]
+ 326 001c 1A60     		str	r2, [r3]
+  95:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****     } else {
+  96:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****         printf("Unable to initialize stack protection.\n");
+  97:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****         for (;;);
+  98:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****     }
+  99:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c **** }
+ 327              		.loc 1 99 1 view .LVU62
+ 328 001e 03B0     		add	sp, sp, #12
+ 329              		.cfi_remember_state
+ 330              		.cfi_def_cfa_offset 4
+ 331              		@ sp needed
+ 332 0020 5DF804FB 		ldr	pc, [sp], #4
+ 333              	.L28:
+ 334              		.cfi_restore_state
+  96:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****         for (;;);
+ 335              		.loc 1 96 9 is_stmt 1 view .LVU63
+ 336 0024 0248     		ldr	r0, .L35+4
+ 337 0026 FFF7FEFF 		bl	puts
+ 338              	.LVL26:
+ 339              	.L29:
+  97:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****     }
+ 340              		.loc 1 97 9 view .LVU64
+  97:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****     }
+ 341              		.loc 1 97 9 view .LVU65
+ 342 002a FEE7     		b	.L29
+ 343              	.L36:
+ 344              		.align	2
+ 345              	.L35:
+ 346 002c 00000000 		.word	__stack_chk_guard
+ 347 0030 00000000 		.word	.LC8
+ 348              		.cfi_endproc
+ 349              	.LFE69:
+ 351              		.section	.rodata.__stack_chk_fail.str1.4,"aMS",%progbits,1
+ 352              		.align	2
+ 353              	.LC9:
+ 354 0000 2A2A2A20 		.ascii	"*** stack smashing detected ***: terminated\000"
+ 354      73746163 
+ 354      6B20736D 
+ 354      61736869 
+ 354      6E672064 
+ 355              		.section	.text.__stack_chk_fail,"ax",%progbits
+ 356              		.align	1
+ 357              		.global	__stack_chk_fail
+ 358              		.syntax unified
+ 359              		.thumb
+ 360              		.thumb_func
+ 362              	__stack_chk_fail:
+ 363              	.LFB70:
+ 100:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c **** 
+ 101:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c **** void
+ 102:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c **** __attribute__((__noreturn__))
+ 103:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c **** __stack_chk_fail (void)
+ 104:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c **** {
+ 364              		.loc 1 104 1 view -0
+ 365              		.cfi_startproc
+ 366              		@ Volatile: function does not return.
+ 367              		@ args = 0, pretend = 0, frame = 8
+ 368              		@ frame_needed = 0, uses_anonymous_args = 0
+ 369 0000 00B5     		push	{lr}
+ 370              		.cfi_def_cfa_offset 4
+ 371              		.cfi_offset 14, -4
+ 372 0002 83B0     		sub	sp, sp, #12
+ 373              		.cfi_def_cfa_offset 16
+ 374              		.loc 1 104 1 is_stmt 0 view .LVU67
+ 375 0004 044B     		ldr	r3, .L41
+ 376 0006 1B68     		ldr	r3, [r3]
+ 377 0008 0193     		str	r3, [sp, #4]
+ 378 000a 4FF00003 		mov	r3, #0
+ 105:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****     printf("*** stack smashing detected ***: terminated\n");
+ 379              		.loc 1 105 5 is_stmt 1 view .LVU68
+ 380 000e 0348     		ldr	r0, .L41+4
+ 381 0010 FFF7FEFF 		bl	puts
+ 382              	.LVL27:
+ 383              	.L38:
+ 106:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****     for (;;);
+ 384              		.loc 1 106 5 view .LVU69
+ 385              		.loc 1 106 5 view .LVU70
+ 386 0014 FEE7     		b	.L38
+ 387              	.L42:
+ 388 0016 00BF     		.align	2
+ 389              	.L41:
+ 390 0018 00000000 		.word	__stack_chk_guard
+ 391 001c 00000000 		.word	.LC9
+ 392              		.cfi_endproc
+ 393              	.LFE70:
+ 395              		.section	.rodata.main.str1.4,"aMS",%progbits,1
+ 396              		.align	2
+ 397              	.LC11:
+ 398 0000 74666D5F 		.ascii	"tfm_ns_interface_init() failed: %u\015\012\000"
+ 398      6E735F69 
+ 398      6E746572 
+ 398      66616365 
+ 398      5F696E69 
+ 399 0025 000000   		.align	2
+ 400              	.LC12:
+ 401 0028 5F5F7374 		.ascii	"__stack_chk_guard == %u\015\012\000"
+ 401      61636B5F 
+ 401      63686B5F 
+ 401      67756172 
+ 401      64203D3D 
+ 402 0042 0000     		.align	2
+ 403              	.LC13:
+ 404 0044 41707000 		.ascii	"App\000"
+ 405              		.section	.text.main,"ax",%progbits
+ 406              		.align	1
+ 407              		.global	main
+ 408              		.syntax unified
+ 409              		.thumb
+ 410              		.thumb_func
+ 412              	main:
+ 413              	.LFB71:
+ 107:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c **** }
+ 108:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c **** 
+ 109:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c **** int main()
+ 110:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c **** {
+ 414              		.loc 1 110 1 view -0
+ 415              		.cfi_startproc
+ 416              		@ args = 0, pretend = 0, frame = 8
+ 417              		@ frame_needed = 0, uses_anonymous_args = 0
+ 418 0000 10B5     		push	{r4, lr}
+ 419              		.cfi_def_cfa_offset 8
+ 420              		.cfi_offset 4, -8
+ 421              		.cfi_offset 14, -4
+ 422 0002 84B0     		sub	sp, sp, #16
+ 423              		.cfi_def_cfa_offset 24
+ 424              		.loc 1 110 1 is_stmt 0 view .LVU72
+ 425 0004 174B     		ldr	r3, .L51
+ 426 0006 1B68     		ldr	r3, [r3]
+ 427 0008 0393     		str	r3, [sp, #12]
+ 428 000a 4FF00003 		mov	r3, #0
+ 111:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****     bsp_serial_init();
+ 429              		.loc 1 111 5 is_stmt 1 view .LVU73
+ 430 000e FFF7FEFF 		bl	bsp_serial_init
+ 431              	.LVL28:
+ 112:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c **** 
+ 113:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****     uint32_t ret = tfm_ns_interface_init();
+ 432              		.loc 1 113 5 view .LVU74
+ 433              		.loc 1 113 20 is_stmt 0 view .LVU75
+ 434 0012 FFF7FEFF 		bl	tfm_ns_interface_init
+ 435              	.LVL29:
+ 436 0016 0446     		mov	r4, r0
+ 437              	.LVL30:
+ 114:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****     __stack_chk_init();
+ 438              		.loc 1 114 5 is_stmt 1 view .LVU76
+ 439 0018 FFF7FEFF 		bl	__stack_chk_init
+ 440              	.LVL31:
+ 115:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c **** 
+ 116:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c **** 
+ 117:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****     if( ret != 0 )
+ 441              		.loc 1 117 5 view .LVU77
+ 442              		.loc 1 117 7 is_stmt 0 view .LVU78
+ 443 001c 8CB9     		cbnz	r4, .L49
+ 118:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****     {
+ 119:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****         printf( "tfm_ns_interface_init() failed: %u\r\n", ret );
+ 120:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****         return EXIT_FAILURE;
+ 121:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****     }
+ 122:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c **** 
+ 123:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****     printf( "__stack_chk_guard == %u\r\n", __stack_chk_guard );
+ 444              		.loc 1 123 5 is_stmt 1 view .LVU79
+ 445 001e 114B     		ldr	r3, .L51
+ 446 0020 1968     		ldr	r1, [r3]
+ 447 0022 1148     		ldr	r0, .L51+4
+ 448 0024 FFF7FEFF 		bl	printf
+ 449              	.LVL32:
+ 124:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c **** 
+ 125:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****     xTaskCreate( app_task,                 /* The function that implements the task. */
+ 450              		.loc 1 125 5 view .LVU80
+ 451 0028 0023     		movs	r3, #0
+ 452 002a 0193     		str	r3, [sp, #4]
+ 453 002c 0122     		movs	r2, #1
+ 454 002e 0092     		str	r2, [sp]
+ 455 0030 4FF48052 		mov	r2, #4096
+ 456 0034 0D49     		ldr	r1, .L51+8
+ 457 0036 0E48     		ldr	r0, .L51+12
+ 458 0038 FFF7FEFF 		bl	xTaskCreate
+ 459              	.LVL33:
+ 126:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****                  "App",                    /* The text name assigned to the task - for debug only a
+ 127:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****                  configMINIMAL_STACK_SIZE, /* The size of the stack to allocate to the task. */
+ 128:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****                  NULL,                     /* The parameter passed to the task - not used in this s
+ 129:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****                  tskIDLE_PRIORITY + 1,     /* The priority assigned to the task. */
+ 130:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****                  NULL );                   /* The task handle is not required, so NULL is passed. *
+ 131:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c **** 
+ 132:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****     vTaskStartScheduler();
+ 460              		.loc 1 132 5 view .LVU81
+ 461 003c FFF7FEFF 		bl	vTaskStartScheduler
+ 462              	.LVL34:
+ 463              	.L45:
+ 133:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c **** 
+ 134:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****     /* If all is well, the scheduler will now be running, and the following
+ 135:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****      * line will never be reached.  If the following line does execute, then
+ 136:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****      * there was insufficient FreeRTOS heap memory available for the idle and/or
+ 137:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****      * timer tasks	to be created.  See the memory management section on the
+ 138:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****      * FreeRTOS web site for more details.  NOTE: This demo uses static allocation
+ 139:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****      * for the idle and timer tasks so this line should never execute. */
+ 140:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****     for( ; ; )
+ 464              		.loc 1 140 5 view .LVU82
+ 141:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****     {
+ 142:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****     }
+ 465              		.loc 1 142 5 view .LVU83
+ 140:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****     {
+ 466              		.loc 1 140 5 view .LVU84
+ 467 0040 FEE7     		b	.L45
+ 468              	.L49:
+ 119:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****         return EXIT_FAILURE;
+ 469              		.loc 1 119 9 view .LVU85
+ 470 0042 2146     		mov	r1, r4
+ 471 0044 0B48     		ldr	r0, .L51+16
+ 472 0046 FFF7FEFF 		bl	printf
+ 473              	.LVL35:
+ 120:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****     }
+ 474              		.loc 1 120 9 view .LVU86
+ 143:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c **** 
+ 144:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****     /* Code execution will never reach this line */
+ 145:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****     return EXIT_FAILURE;
+ 146:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c **** }
+ 475              		.loc 1 146 1 is_stmt 0 view .LVU87
+ 476 004a 064B     		ldr	r3, .L51
+ 477 004c 1A68     		ldr	r2, [r3]
+ 478 004e 039B     		ldr	r3, [sp, #12]
+ 479 0050 5A40     		eors	r2, r3, r2
+ 480 0052 4FF00003 		mov	r3, #0
+ 481 0056 02D1     		bne	.L50
+ 482 0058 0120     		movs	r0, #1
+ 483 005a 04B0     		add	sp, sp, #16
+ 484              		.cfi_remember_state
+ 485              		.cfi_def_cfa_offset 8
+ 486              		@ sp needed
+ 487 005c 10BD     		pop	{r4, pc}
+ 488              	.LVL36:
+ 489              	.L50:
+ 490              		.cfi_restore_state
+ 491              		.loc 1 146 1 view .LVU88
+ 492 005e FFF7FEFF 		bl	__stack_chk_fail
+ 493              	.LVL37:
+ 494              	.L52:
+ 495 0062 00BF     		.align	2
+ 496              	.L51:
+ 497 0064 00000000 		.word	__stack_chk_guard
+ 498 0068 28000000 		.word	.LC12
+ 499 006c 44000000 		.word	.LC13
+ 500 0070 00000000 		.word	app_task
+ 501 0074 00000000 		.word	.LC11
+ 502              		.cfi_endproc
+ 503              	.LFE71:
+ 505              		.section	.text.vApplicationStackOverflowHook,"ax",%progbits
+ 506              		.align	1
+ 507              		.global	vApplicationStackOverflowHook
+ 508              		.syntax unified
+ 509              		.thumb
+ 510              		.thumb_func
+ 512              	vApplicationStackOverflowHook:
+ 513              	.LVL38:
+ 514              	.LFB72:
+ 147:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c **** 
+ 148:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c **** /**
+ 149:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****  * Dummy implementation of the callback function vApplicationStackOverflowHook().
+ 150:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****  */
+ 151:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c **** #if ( configCHECK_FOR_STACK_OVERFLOW > 0 )
+ 152:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****     void vApplicationStackOverflowHook( TaskHandle_t xTask,
+ 153:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****                                         char * pcTaskName )
+ 154:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****     {
+ 515              		.loc 1 154 5 is_stmt 1 view -0
+ 516              		.cfi_startproc
+ 517              		@ args = 0, pretend = 0, frame = 8
+ 518              		@ frame_needed = 0, uses_anonymous_args = 0
+ 519              		.loc 1 154 5 is_stmt 0 view .LVU90
+ 520 0000 00B5     		push	{lr}
+ 521              		.cfi_def_cfa_offset 4
+ 522              		.cfi_offset 14, -4
+ 523 0002 83B0     		sub	sp, sp, #12
+ 524              		.cfi_def_cfa_offset 16
+ 525              		.loc 1 154 5 view .LVU91
+ 526 0004 0A4B     		ldr	r3, .L57
+ 527 0006 1B68     		ldr	r3, [r3]
+ 528 0008 0193     		str	r3, [sp, #4]
+ 529 000a 4FF00003 		mov	r3, #0
+ 155:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****         ( void ) xTask;
+ 530              		.loc 1 155 9 is_stmt 1 view .LVU92
+ 156:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****         ( void ) pcTaskName;
+ 531              		.loc 1 156 9 view .LVU93
+ 157:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c **** 
+ 158:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****         /* Assert when stack overflow is enabled but no application defined function exists */
+ 159:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****         configASSERT( 0 );
+ 532              		.loc 1 159 9 view .LVU94
+ 533              		.loc 1 159 9 discriminator 1 view .LVU95
+ 534 000e 9F21     		movs	r1, #159
+ 535              	.LVL39:
+ 536              		.loc 1 159 9 is_stmt 0 discriminator 1 view .LVU96
+ 537 0010 0848     		ldr	r0, .L57+4
+ 538              	.LVL40:
+ 539              		.loc 1 159 9 discriminator 1 view .LVU97
+ 540 0012 FFF7FEFF 		bl	vAssertCalled
+ 541              	.LVL41:
+ 542              		.loc 1 159 26 is_stmt 1 discriminator 3 view .LVU98
+ 160:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****     }
+ 543              		.loc 1 160 5 is_stmt 0 view .LVU99
+ 544 0016 064B     		ldr	r3, .L57
+ 545 0018 1A68     		ldr	r2, [r3]
+ 546 001a 019B     		ldr	r3, [sp, #4]
+ 547 001c 5A40     		eors	r2, r3, r2
+ 548 001e 4FF00003 		mov	r3, #0
+ 549 0022 02D1     		bne	.L56
+ 550 0024 03B0     		add	sp, sp, #12
+ 551              		.cfi_remember_state
+ 552              		.cfi_def_cfa_offset 4
+ 553              		@ sp needed
+ 554 0026 5DF804FB 		ldr	pc, [sp], #4
+ 555              	.L56:
+ 556              		.cfi_restore_state
+ 557 002a FFF7FEFF 		bl	__stack_chk_fail
+ 558              	.LVL42:
+ 559              	.L58:
+ 560 002e 00BF     		.align	2
+ 561              	.L57:
+ 562 0030 00000000 		.word	__stack_chk_guard
+ 563 0034 00000000 		.word	.LC6
+ 564              		.cfi_endproc
+ 565              	.LFE72:
+ 567              		.section	.text.vApplicationGetIdleTaskMemory,"ax",%progbits
+ 568              		.align	1
+ 569              		.global	vApplicationGetIdleTaskMemory
+ 570              		.syntax unified
+ 571              		.thumb
+ 572              		.thumb_func
+ 574              	vApplicationGetIdleTaskMemory:
+ 575              	.LVL43:
+ 576              	.LFB73:
+ 161:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c **** #endif
+ 162:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c **** 
+ 163:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c **** /*---------------------------------------------------------------------------*/
+ 164:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c **** #if ( configSUPPORT_STATIC_ALLOCATION == 1 )
+ 165:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c **** 
+ 166:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c **** /*
+ 167:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****  * vApplicationGetIdleTaskMemory gets called when configSUPPORT_STATIC_ALLOCATION
+ 168:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****  * equals to 1 and is required for static memory allocation support.
+ 169:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****  */
+ 170:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****     void vApplicationGetIdleTaskMemory( StaticTask_t ** ppxIdleTaskTCBBuffer,
+ 171:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****                                         StackType_t ** ppxIdleTaskStackBuffer,
+ 172:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****                                         uint32_t * pulIdleTaskStackSize )
+ 173:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****     {
+ 577              		.loc 1 173 5 is_stmt 1 view -0
+ 578              		.cfi_startproc
+ 579              		@ args = 0, pretend = 0, frame = 8
+ 580              		@ frame_needed = 0, uses_anonymous_args = 0
+ 581              		.loc 1 173 5 is_stmt 0 view .LVU101
+ 582 0000 00B5     		push	{lr}
+ 583              		.cfi_def_cfa_offset 4
+ 584              		.cfi_offset 14, -4
+ 585 0002 83B0     		sub	sp, sp, #12
+ 586              		.cfi_def_cfa_offset 16
+ 587              		.loc 1 173 5 view .LVU102
+ 588 0004 0B4B     		ldr	r3, .L63
+ 589 0006 1B68     		ldr	r3, [r3]
+ 590 0008 0193     		str	r3, [sp, #4]
+ 591 000a 4FF00003 		mov	r3, #0
+ 174:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****         /* Idle task control block and stack */
+ 175:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****         static StaticTask_t Idle_TCB;
+ 592              		.loc 1 175 9 is_stmt 1 view .LVU103
+ 176:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****         static StackType_t Idle_Stack[ configMINIMAL_STACK_SIZE ];
+ 593              		.loc 1 176 9 view .LVU104
+ 177:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c **** 
+ 178:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****         *ppxIdleTaskTCBBuffer = &Idle_TCB;
+ 594              		.loc 1 178 9 view .LVU105
+ 595              		.loc 1 178 31 is_stmt 0 view .LVU106
+ 596 000e 0A4B     		ldr	r3, .L63+4
+ 597 0010 0360     		str	r3, [r0]
+ 179:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****         *ppxIdleTaskStackBuffer = &Idle_Stack[ 0 ];
+ 598              		.loc 1 179 9 is_stmt 1 view .LVU107
+ 599              		.loc 1 179 33 is_stmt 0 view .LVU108
+ 600 0012 0A4B     		ldr	r3, .L63+8
+ 601 0014 0B60     		str	r3, [r1]
+ 180:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****         *pulIdleTaskStackSize = ( uint32_t ) configMINIMAL_STACK_SIZE;
+ 602              		.loc 1 180 9 is_stmt 1 view .LVU109
+ 603              		.loc 1 180 31 is_stmt 0 view .LVU110
+ 604 0016 4FF48053 		mov	r3, #4096
+ 605 001a 1360     		str	r3, [r2]
+ 181:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****     }
+ 606              		.loc 1 181 5 view .LVU111
+ 607 001c 054B     		ldr	r3, .L63
+ 608 001e 1A68     		ldr	r2, [r3]
+ 609 0020 019B     		ldr	r3, [sp, #4]
+ 610 0022 5A40     		eors	r2, r3, r2
+ 611 0024 4FF00003 		mov	r3, #0
+ 612              	.LVL44:
+ 613              		.loc 1 181 5 view .LVU112
+ 614 0028 02D1     		bne	.L62
+ 615 002a 03B0     		add	sp, sp, #12
+ 616              		.cfi_remember_state
+ 617              		.cfi_def_cfa_offset 4
+ 618              		@ sp needed
+ 619 002c 5DF804FB 		ldr	pc, [sp], #4
+ 620              	.L62:
+ 621              		.cfi_restore_state
+ 622 0030 FFF7FEFF 		bl	__stack_chk_fail
+ 623              	.LVL45:
+ 624              	.L64:
+ 625              		.loc 1 181 5 view .LVU113
+ 626              		.align	2
+ 627              	.L63:
+ 628 0034 00000000 		.word	__stack_chk_guard
+ 629 0038 00000000 		.word	Idle_TCB.3
+ 630 003c 00000000 		.word	Idle_Stack.2
+ 631              		.cfi_endproc
+ 632              	.LFE73:
+ 634              		.section	.text.vApplicationGetTimerTaskMemory,"ax",%progbits
+ 635              		.align	1
+ 636              		.global	vApplicationGetTimerTaskMemory
+ 637              		.syntax unified
+ 638              		.thumb
+ 639              		.thumb_func
+ 641              	vApplicationGetTimerTaskMemory:
+ 642              	.LVL46:
+ 643              	.LFB74:
+ 182:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c **** 
+ 183:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c **** /*
+ 184:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****  * vApplicationGetTimerTaskMemory gets called when configSUPPORT_STATIC_ALLOCATION
+ 185:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****  * equals to 1 and is required for static memory allocation support.
+ 186:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****  */
+ 187:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****     void vApplicationGetTimerTaskMemory( StaticTask_t ** ppxTimerTaskTCBBuffer,
+ 188:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****                                          StackType_t ** ppxTimerTaskStackBuffer,
+ 189:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****                                          uint32_t * pulTimerTaskStackSize )
+ 190:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****     {
+ 644              		.loc 1 190 5 is_stmt 1 view -0
+ 645              		.cfi_startproc
+ 646              		@ args = 0, pretend = 0, frame = 8
+ 647              		@ frame_needed = 0, uses_anonymous_args = 0
+ 648              		.loc 1 190 5 is_stmt 0 view .LVU115
+ 649 0000 00B5     		push	{lr}
+ 650              		.cfi_def_cfa_offset 4
+ 651              		.cfi_offset 14, -4
+ 652 0002 83B0     		sub	sp, sp, #12
+ 653              		.cfi_def_cfa_offset 16
+ 654              		.loc 1 190 5 view .LVU116
+ 655 0004 0B4B     		ldr	r3, .L69
+ 656 0006 1B68     		ldr	r3, [r3]
+ 657 0008 0193     		str	r3, [sp, #4]
+ 658 000a 4FF00003 		mov	r3, #0
+ 191:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****         /* Timer task control block and stack */
+ 192:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****         static StaticTask_t Timer_TCB;
+ 659              		.loc 1 192 9 is_stmt 1 view .LVU117
+ 193:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****         static StackType_t Timer_Stack[ configTIMER_TASK_STACK_DEPTH ];
+ 660              		.loc 1 193 9 view .LVU118
+ 194:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c **** 
+ 195:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****         *ppxTimerTaskTCBBuffer = &Timer_TCB;
+ 661              		.loc 1 195 9 view .LVU119
+ 662              		.loc 1 195 32 is_stmt 0 view .LVU120
+ 663 000e 0A4B     		ldr	r3, .L69+4
+ 664 0010 0360     		str	r3, [r0]
+ 196:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****         *ppxTimerTaskStackBuffer = &Timer_Stack[ 0 ];
+ 665              		.loc 1 196 9 is_stmt 1 view .LVU121
+ 666              		.loc 1 196 34 is_stmt 0 view .LVU122
+ 667 0012 0A4B     		ldr	r3, .L69+8
+ 668 0014 0B60     		str	r3, [r1]
+ 197:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****         *pulTimerTaskStackSize = ( uint32_t ) configTIMER_TASK_STACK_DEPTH;
+ 669              		.loc 1 197 9 is_stmt 1 view .LVU123
+ 670              		.loc 1 197 32 is_stmt 0 view .LVU124
+ 671 0016 4FF48053 		mov	r3, #4096
+ 672 001a 1360     		str	r3, [r2]
+ 198:/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/main.c ****     }
+ 673              		.loc 1 198 5 view .LVU125
+ 674 001c 054B     		ldr	r3, .L69
+ 675 001e 1A68     		ldr	r2, [r3]
+ 676 0020 019B     		ldr	r3, [sp, #4]
+ 677 0022 5A40     		eors	r2, r3, r2
+ 678 0024 4FF00003 		mov	r3, #0
+ 679              	.LVL47:
+ 680              		.loc 1 198 5 view .LVU126
+ 681 0028 02D1     		bne	.L68
+ 682 002a 03B0     		add	sp, sp, #12
+ 683              		.cfi_remember_state
+ 684              		.cfi_def_cfa_offset 4
+ 685              		@ sp needed
+ 686 002c 5DF804FB 		ldr	pc, [sp], #4
+ 687              	.L68:
+ 688              		.cfi_restore_state
+ 689 0030 FFF7FEFF 		bl	__stack_chk_fail
+ 690              	.LVL48:
+ 691              	.L70:
+ 692              		.loc 1 198 5 view .LVU127
+ 693              		.align	2
+ 694              	.L69:
+ 695 0034 00000000 		.word	__stack_chk_guard
+ 696 0038 00000000 		.word	Timer_TCB.1
+ 697 003c 00000000 		.word	Timer_Stack.0
+ 698              		.cfi_endproc
+ 699              	.LFE74:
+ 701              		.section	.bss.Timer_Stack.0,"aw",%nobits
+ 702              		.align	2
+ 705              	Timer_Stack.0:
+ 706 0000 00000000 		.space	16384
+ 706      00000000 
+ 706      00000000 
+ 706      00000000 
+ 706      00000000 
+ 707              		.section	.bss.Timer_TCB.1,"aw",%nobits
+ 708              		.align	2
+ 711              	Timer_TCB.1:
+ 712 0000 00000000 		.space	124
+ 712      00000000 
+ 712      00000000 
+ 712      00000000 
+ 712      00000000 
+ 713              		.section	.bss.Idle_Stack.2,"aw",%nobits
+ 714              		.align	2
+ 717              	Idle_Stack.2:
+ 718 0000 00000000 		.space	16384
+ 718      00000000 
+ 718      00000000 
+ 718      00000000 
+ 718      00000000 
+ 719              		.section	.bss.Idle_TCB.3,"aw",%nobits
+ 720              		.align	2
+ 723              	Idle_TCB.3:
+ 724 0000 00000000 		.space	124
+ 724      00000000 
+ 724      00000000 
+ 724      00000000 
+ 724      00000000 
+ 725              		.global	__stack_chk_guard
+ 726              		.section	.bss.__stack_chk_guard,"aw",%nobits
+ 727              		.align	2
+ 730              	__stack_chk_guard:
+ 731 0000 00000000 		.space	4
+ 732              		.text
+ 733              	.Letext0:
+ 734              		.file 2 "/usr/lib/gcc/arm-none-eabi/13.2.1/include/stddef.h"
+ 735              		.file 3 "/usr/lib/gcc/arm-none-eabi/13.2.1/include/stdint.h"
+ 736              		.file 4 "/home/oliver/code/iot-reference-arm-corstone3xx/build/iot_reference_arm_corstone3xx/compo
+ 737              		.file 5 "/home/oliver/code/iot-reference-arm-corstone3xx/components/freertos_kernel/library/includ
+ 738              		.file 6 "/home/oliver/code/iot-reference-arm-corstone3xx/components/freertos_kernel/library/portab
+ 739              		.file 7 "/home/oliver/code/iot-reference-arm-corstone3xx/components/freertos_kernel/library/includ
+ 740              		.file 8 "/home/oliver/code/iot-reference-arm-corstone3xx/components/freertos_kernel/library/includ
+ 741              		.file 9 "/home/oliver/code/iot-reference-arm-corstone3xx/build/iot_reference_arm_corstone3xx/compo
+ 742              		.file 10 "/home/oliver/code/iot-reference-arm-corstone3xx/bsp/common/bsp_serial.h"
+ 743              		.file 11 "/home/oliver/code/iot-reference-arm-corstone3xx/build/iot_reference_arm_corstone3xx/comp
+ 744              		.file 12 "/usr/include/newlib/stdio.h"
+ 745              		.file 13 "/home/oliver/code/iot-reference-arm-corstone3xx/applications/memsafe/configs/freertos_co
+ 746              		.file 14 "/usr/include/newlib/ssp/ssp.h"
+ 747              		.file 15 "<built-in>"

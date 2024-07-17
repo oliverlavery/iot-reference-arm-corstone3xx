@@ -16,6 +16,7 @@ project(memsafe-example LANGUAGES C)
 # Set global optimization level to reduce code size while keeping the debug experience.
 if(${CMAKE_C_COMPILER_ID} STREQUAL "GNU")
     add_compile_options(-Og)
+    add_compile_options(-fstack-protector-all -D_FORTIFY_SOURCE=2)
 elseif(${CMAKE_C_COMPILER_ID} STREQUAL "ARMClang")
     add_compile_options(-O1)
 endif()
@@ -28,16 +29,26 @@ include(SetLinkerOptions)
 include(MergeTfmImages)
 include(SignTfmImage)
 
-add_subdirectory(configs)
+add_subdirectory(configs ${CMAKE_BINARY_DIR}/Config)
 
-add_executable(memsafe main.c)
+set (sources
+    main.c
+)
+
+foreach(source_file IN LISTS sources)
+    set_source_files_properties(${source_file} PROPERTIES COMPILE_OPTIONS "-Wa,-adhln=${CMAKE_CURRENT_SOURCE_DIR}/${source_file}.lst")
+endforeach()
+
+add_executable(memsafe ${sources})
 # Trusted Firmware-M must be built before the application, because
 # the application depends on the NS interface and the BL2 signing scripts,
 # both of which are generated as parts of the Trusted Firmware-M build process.
 add_dependencies(memsafe trusted_firmware-m-build)
 target_link_libraries(memsafe
     freertos_kernel
+    freertos-ota-pal-psa
     fri-bsp
+    mbedtls
     tfm-ns-interface
     toolchain-override
 )

@@ -4,3 +4,4 @@
 
 add_subdirectory(app_config)
 add_subdirectory(freertos_config)
+add_subdirectory(mbedtls_config)

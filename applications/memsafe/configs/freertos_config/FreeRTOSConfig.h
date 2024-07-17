@@ -50,6 +50,7 @@ extern uint32_t SystemCoreClock;
 #define configSUPPORT_DYNAMIC_ALLOCATION    1
 #define configTOTAL_HEAP_SIZE               0
 #define configAPPLICATION_ALLOCATED_HEAP    0
+#define configENABLE_HEAP_PROTECTOR         1
 
 #define configENABLE_MVE                    0
 #define configENABLE_FPU                    1
